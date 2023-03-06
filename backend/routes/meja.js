@@ -136,6 +136,7 @@ app.delete("/:id", (req,res) => {
     })
     })
 
+    //ambil data meja yang available aja
 
 //video dan pembelajaran, bahas, kasus, game, kuis
 //mu72e4

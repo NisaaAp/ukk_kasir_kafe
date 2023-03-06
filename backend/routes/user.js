@@ -13,6 +13,11 @@ const multer = require("multer")
 const path = require("path")
 const fs = require("fs")
 
+//import auth 
+const auth = require("../auth")
+const jwt = require("jsonwebtoken")
+const SECRET_KEY = "BeruangKutub"
+
 //membuat konfigurasi diskStorage multer
 //config storage image
 const storage = multer.diskStorage({
@@ -31,6 +36,7 @@ const Op = Sequelize.Op
 
 //import model
 const model = require('../models/index');
+// const { userInfo } = require('os');
 const user = model.user
 
 
@@ -38,9 +44,10 @@ const user = model.user
 //endpoint menampilkan semua data user, method: GET, function: findAll()
 app.get("/", (req,res) => {
     user.findAll()
-        .then(result => {
+        .then(user => {
             res.json({
-                user : result
+                count: user.length,
+                user : user
             })
         })
         .catch(error => {
@@ -170,6 +177,12 @@ app.put("/pass/:id_user", (req, res) => {
 app.delete("/:id_user", async (req, res) =>{
     try {
         let param = { id_user: req.params.id_user}
+        const row = await transaksi.findOne({ where: param })
+        if (row !== null) {
+            res.json({
+                message: "Data can not be deleted",
+            })
+        } else {
         let result = await user.findOne({where: param})
         let oldFileName = result.image
            
@@ -190,7 +203,7 @@ app.delete("/:id_user", async (req, res) =>{
                 message: error.message
             })
         })
- 
+    }
     } catch (error) {
         res.json({
             message: error.message
@@ -227,6 +240,38 @@ app.delete("/:id_user", async (req, res) =>{
         user: result
     })
 
+})
+
+//endpoint login user, METHOD: POST, function: findOne
+app.post("/auth", async (req, res) => {
+    let data = {
+        username: req.body.username,
+        password: md5(req.body.password)
+    }
+
+    let result = await user.findOne({ where: data })
+    if (result) {
+        //set payload from data
+        let payload = JSON.stringify({
+            id_user: result.id_user,
+            name: result.name,
+            username: result.username
+        })//convert javascript ke json
+
+        let token = jwt.sign(payload, SECRET_KEY)
+
+        res.json({
+            logged: true,
+            data: result,
+            token: token
+        })
+    } else {
+
+        res.json({
+            logged: false,
+            message: "Invalid Username or Password"
+        })
+    }
 })
 
 module.exports = app;

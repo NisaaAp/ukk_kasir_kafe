@@ -2,14 +2,30 @@
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
+
   ],
   theme: {
     extend: {
-      colors:{
-        "dark-purple": "#000000",
-        "light-white": "rgba(255,255,255,0.17)"
-      },
+      colors: {
+        glass: "rgba(255,255,255,0.25)",
+        brown: "rgb(30, 30, 17);"
+      }
     },
+    backgroundImage: {
+      back: "url(./assets/background.svg)"
+    }
   },
   plugins: [],
 }
+  
+// }
+//   theme: {
+//     extend: {
+//       colors:{
+//         "dark-purple": "#000000",
+//         "light-white": "rgba(255,255,255,0.17)"
+//       },
+//     },
+//   },
+//   plugins: [],
+

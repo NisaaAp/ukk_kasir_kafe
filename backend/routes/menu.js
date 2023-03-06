@@ -25,6 +25,7 @@ let upload = multer({ storage: storage })
 //import model
 const models = require('../models/index');
 const menu = models.menu
+const detail_transaksi = models.detail_transaksi
 
 //import sequelize op
 const Sequelize = require("sequelize");
@@ -130,39 +131,43 @@ app.put("/:id", upload.single("image"), (req, res) => {
         })
 })
 
-
 app.delete("/:id", async (req, res) => {
     try {
         let param = { id_menu: req.params.id }
-        let result = await menu.findOne({ where: param })
-        let oldFileName = result.image
-
-        //delete oldfile
-        let dir = path.join(__dirname, "../image/menu", oldFileName)
-        fs.unlink(dir, err => console.log(err))
-
-        //delete data
-        menu.destroy({ where: param })
-            .then(result => {
-                res.json({
-                    message: "Data has been deleted",
-                })
+        const row = await detail_transaksi.findOne({ where: param })
+        if (row !== null) {
+            res.json({
+                message: "Data can not be deleted",
             })
-            .catch(error => {
-                res.json({
-                    message: error.message
+        } else {
+            let result = await menu.findOne({ where: param })
+            let oldFileName = result.image
+            // delete old file
+            let dir = path.join(__dirname, "../image/menu", oldFileName)
+            fs.unlink(dir, err => console.log(err))
+
+            // delete data
+            menu.destroy({ where: param })
+                .then(result => {
+                    res.json({
+                        message: "Data has been deleted",
+                    })
                 })
-            })
-    }
-    catch (error) {
+                .catch(error => {
+                    res.json({
+                        message: error.message
+                    })
+                })
+        }
+    } catch (error) {
         res.json({
             message: error.message
         })
     }
 })
 
-//search for menu, method:post
 
+//search for menu, method:post
 app.post("/search", async (req, res) => {
     let keyword = req.body.keyword
     let result = await menu.findAll({
@@ -195,5 +200,32 @@ app.post("/search", async (req, res) => {
         menu: result
     })
 })
+
+  //mendapatkan menu terlaris
+  app.get("/terlaris/meenu", async (req, res) => {
+    try {
+      const result = await detail_transaksi.findAll({
+        attributes: [
+          'id_menu',
+          [models.sequelize.fn('sum', models.sequelize.col('qty')), 'total_penjualan']
+        ],
+        include: [
+          {
+            model: menu,
+            as: 'menu',
+            // where: { jenis: 'makanan' },
+            attributes: ['nama_menu']
+          }
+        ],
+        group: ['id_menu'],
+        order: [[models.sequelize.fn('sum', models.sequelize.col('qty')), 'DESC']]
+      });
+      res.status(200).json({ menu: result });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
 
 module.exports = app;
